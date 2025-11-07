@@ -1,62 +1,54 @@
-import './global.css';
-import React, { useEffect, useState, createContext } from 'react';
-import { View, ActivityIndicator } from 'react-native';
-import * as SecureStore from 'expo-secure-store';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import "./global.css"
+import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import * as SecureStore from 'expo-secure-store';
 import LoginScreen from './screens/LoginScreen';
+import SignupScreen from './screens/SignupScreen';
 import HomeScreen from './screens/HomeScreen';
-import SignupScreen from 'screens/SignupScreen';
+import { ActivityIndicator, View } from 'react-native';
 
 const Stack = createNativeStackNavigator();
 
-export const AuthContext = createContext({
-  userToken: null as string | null,
-  setUserToken: (token: string | null) => {},
-});
-
-const App = () => {
+export default function App() {
+  const [isLoading, setIsLoading] = useState(true);
   const [userToken, setUserToken] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const getToken = async () => {
+    const checkToken = async () => {
       const token = await SecureStore.getItemAsync('userToken');
-      console.log('Stored token:', token);
       setUserToken(token);
-      setLoading(false);
+      setIsLoading(false);
     };
-    getToken();
+    checkToken();
   }, []);
 
-  if (loading) {
+  if (isLoading) {
     return (
       <View className="flex-1 items-center justify-center">
-        <ActivityIndicator size="large" color="#FFFF00" />
+        <ActivityIndicator size="large" />
       </View>
     );
   }
 
   return (
-    <AuthContext.Provider value={{ userToken, setUserToken }}>
-      <NavigationContainer>
-        {userToken ? <AppStack /> : <AuthStack />}
-      </NavigationContainer>
-    </AuthContext.Provider>
+    <NavigationContainer>
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        {userToken ? (
+          <Stack.Screen name="Home">
+            {(props) => <HomeScreen {...props} setUserToken={setUserToken} />}
+          </Stack.Screen>
+        ) : (
+          <>
+            <Stack.Screen name="Login">
+              {(props) => <LoginScreen {...props} setUserToken={setUserToken} />}
+            </Stack.Screen>
+            <Stack.Screen name="Signup">
+              {(props) => <SignupScreen {...props} setUserToken={setUserToken} />}
+            </Stack.Screen>
+          </>
+        )}
+      </Stack.Navigator>
+    </NavigationContainer>
   );
-};
-
-const AuthStack = () => (
-  <Stack.Navigator>
-    <Stack.Screen name="Login" component={LoginScreen} />
-    <Stack.Screen name='Signup' component={SignupScreen} />
-  </Stack.Navigator>
-);
-
-const AppStack = () => (
-  <Stack.Navigator>
-    <Stack.Screen name="home" component={HomeScreen} />
-  </Stack.Navigator>
-);
-
-export default App;
+}

@@ -1,16 +1,14 @@
 import { Text, TextInput, View, Pressable, Alert, ActivityIndicator } from 'react-native';
-import React, { useState, useContext } from 'react';
+import React, { useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { axiosInstance } from 'lib/axios';
 import * as SecureStore from 'expo-secure-store';
-import { AuthContext } from '../App';
 
-const LoginScreen = () => {
+const LoginScreen = ({ setUserToken }: any) => {
+  const navigation = useNavigation<any>();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const navigation = useNavigation<any>();
-  const { setUserToken } = useContext(AuthContext);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -23,7 +21,7 @@ const LoginScreen = () => {
       const res = await axiosInstance.post('/auth/login', { email, password });
       if (res.data.token) {
         await SecureStore.setItemAsync('userToken', res.data.token);
-        setUserToken(res.data.token); // 👈 triggers App to re-render and switch to Home
+        setUserToken(res.data.token); // 👈 Update global auth state
         Alert.alert('Login Successful');
       } else {
         Alert.alert('Login failed', res.data?.msg || 'Something went wrong');
@@ -37,11 +35,12 @@ const LoginScreen = () => {
   };
 
   return (
-    <View className="flex-1 items-center justify-center gap-4 p-8">
+    <View className="flex-1 items-center justify-center min-h-screen gap-4 p-8">
       <TextInput
         placeholder="email"
         value={email}
         onChangeText={setEmail}
+        autoCapitalize="none"
         className="w-full rounded-lg border-b border-neutral-500 px-4 text-sm"
       />
       <TextInput
@@ -51,6 +50,7 @@ const LoginScreen = () => {
         secureTextEntry
         className="w-full rounded-lg border-b border-neutral-500 px-4 text-sm"
       />
+
       <Pressable
         onPress={handleLogin}
         className="w-full rounded-lg bg-yellow-400 py-3 active:bg-yellow-300"
